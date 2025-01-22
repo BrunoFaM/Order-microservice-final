@@ -49,7 +49,11 @@ public class Order {
     }
 
     public void setProducts(Set<OrderItem> products) {
-        this.products = products;
+        //adding the foreign key to each item
+        for(OrderItem item : products){
+            this.addOrderItem(item);
+        }
+
     }
 
     public OrderStatus getStatus() {
