@@ -1,6 +1,7 @@
 package com.example.order_service.controllers;
 
 import com.example.order_service.dtos.NewOrder;
+import com.example.order_service.dtos.NewOrderRequest;
 import com.example.order_service.dtos.OrderDTO;
 import com.example.order_service.exceptions.OrderNotFoundException;
 import com.example.order_service.models.OrderStatus;
@@ -30,12 +31,16 @@ public class OrderController {
     }
 
     @PostMapping
-    public ResponseEntity<?> postAnOrder(@Valid @RequestBody NewOrder newOrder){
+    public ResponseEntity<?> postAnOrder(@Valid @RequestBody NewOrderRequest newOrderRequest){
 
-        OrderDTO order = orderService.createOrder(newOrder);
+        orderService.createOrder(newOrderRequest);
 
-        return new ResponseEntity<>(order, HttpStatus.CREATED);
+        return new ResponseEntity<>(HttpStatus.OK);
+
+
+
     }
+
 
     @PutMapping ("/{id}")
     public ResponseEntity<?> updateOrderStatus(@PathVariable Long id, @RequestBody OrderStatus status) throws OrderNotFoundException {

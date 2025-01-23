@@ -1,6 +1,7 @@
 package com.example.order_service.services;
 
 import com.example.order_service.dtos.NewOrder;
+import com.example.order_service.dtos.NewOrderRequest;
 import com.example.order_service.dtos.OrderDTO;
 import com.example.order_service.exceptions.OrderNotFoundException;
 import com.example.order_service.models.Order;
@@ -15,5 +16,7 @@ public interface OrderService {
     OrderDTO createOrder(NewOrder newOrder);
 
     void updateOrderStatus(Long id, OrderStatus status) throws OrderNotFoundException;
+
+    public void createOrder(NewOrderRequest newOrderRequest);
 
 }
