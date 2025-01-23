@@ -59,7 +59,10 @@ public class OrderServiceImpl implements OrderService {
     @Override
     public void updateOrderStatus(Long id, OrderStatus status) throws OrderNotFoundException {
         Order order = getOrderById(id);
-        order.setStatus(status);
-        orderRepository.save(order);
+        if(order.getStatus() != status){
+            order.setStatus(status);
+            orderRepository.save(order);
+        }
+
     }
 }

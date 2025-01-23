@@ -3,13 +3,8 @@ package com.example.order_service.dtos;
 import com.example.order_service.models.Order;
 import com.example.order_service.models.OrderItem;
 import com.example.order_service.models.OrderStatus;
-import jakarta.persistence.OneToMany;
-
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 
-import static java.util.stream.Collectors.toList;
 
 public class OrderDTO {
 

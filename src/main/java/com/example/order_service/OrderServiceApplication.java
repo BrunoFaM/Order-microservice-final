@@ -30,7 +30,7 @@ public class OrderServiceApplication {
 	CommandLineRunner initData(){
 		return args -> {
 			OrderItem item1 = new OrderItem(101L, 2);
-			OrderItem item2 = new OrderItem( 102L, 1);
+			OrderItem item2 = new OrderItem(102L, 1);
 			OrderItem item3 = new OrderItem(103L, 4);
 			OrderItem item4 = new OrderItem(104L, 3);
 			OrderItem item5 = new OrderItem(105L, 5);
