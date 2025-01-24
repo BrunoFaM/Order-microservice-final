@@ -3,7 +3,9 @@ package com.example.order_service.services.ServicesImplementation;
 import com.example.order_service.dtos.NewOrder;
 import com.example.order_service.dtos.NewOrderRequest;
 import com.example.order_service.dtos.OrderDTO;
+import com.example.order_service.exceptions.OrderErrorException;
 import com.example.order_service.exceptions.OrderNotFoundException;
+import com.example.order_service.exceptions.UserNotFoundException;
 import com.example.order_service.models.Order;
 import com.example.order_service.models.OrderItem;
 import com.example.order_service.models.OrderStatus;
@@ -12,16 +14,13 @@ import com.example.order_service.repository.OrderRepository;
 import com.example.order_service.services.OrderService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpMethod;
-import org.springframework.http.ResponseEntity;
+import org.springframework.http.*;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.HttpClientErrorException;
+import org.springframework.web.client.HttpStatusCodeException;
 import org.springframework.web.client.RestTemplate;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -49,9 +48,8 @@ public class OrderServiceImpl implements OrderService {
         return orderList;
     }
 
-    @Override
-    public OrderDTO createOrder(NewOrder newOrder) {
-        Order order = new Order(newOrder.userId(), newOrder.status());
+    private OrderDTO saveOrder(Long userId, NewOrderRequest newOrder) {
+        Order order = new Order(userId, OrderStatus.PENDING);
         Set<OrderItem> products = newOrder
                         .products()
                         .stream()
@@ -67,25 +65,27 @@ public class OrderServiceImpl implements OrderService {
         return new OrderDTO(savedOrder);
     }
 
-    public void createOrder(NewOrderRequest newOrderRequest){
+    public OrderDTO createOrder(NewOrderRequest newOrderRequest) throws OrderErrorException, UserNotFoundException{
         //getting the user_Id
         String email = newOrderRequest.email();
-        String url = urlUserService + newOrderRequest.email();
-        try{
-            ResponseEntity<Long> response = restTemplate.getForEntity(urlUserService + "/{email}", Long.class, email);
-            Long userId = response.getBody();
-            System.out.println("++++++++++++++++++++++++++++++++");
-            //Sending data to ProductService
-
-            ResponseEntity<Boolean> wasSaved = restTemplate.postForEntity(urlProductService + "order", newOrderRequest.products(), Boolean.class);
-            //ResponseEntity<Boolean> responseProductService = restTemplate.exchange(urlProductService + "order", HttpMethod.PUT, )
-
-            System.out.println(wasSaved.getBody());
-
-
-        }catch (Exception ignored){
-            System.out.println(ignored.getMessage());
+        ResponseEntity<Long> response;
+        ResponseEntity<Boolean> wasSaved;
+        try {
+            response = restTemplate.getForEntity(urlUserService + "/{email}", Long.class, email);
+        } catch (HttpClientErrorException exception) {
+            //return new ResponseEntity<>(exception.getMessage(), exception.getStatusCode());
+            throw new UserNotFoundException(exception.getResponseBodyAsString());
         }
+
+        try{
+            restTemplate.postForEntity(urlProductService + "order", newOrderRequest.products(), Boolean.class);
+        }catch (HttpStatusCodeException exception){
+            throw new OrderErrorException(exception.getResponseBodyAsString());
+        }
+        Long userId = response.getBody();
+
+
+        return saveOrder(userId,newOrderRequest);
 
     }
 

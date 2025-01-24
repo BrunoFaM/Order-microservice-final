@@ -3,7 +3,9 @@ package com.example.order_service.services;
 import com.example.order_service.dtos.NewOrder;
 import com.example.order_service.dtos.NewOrderRequest;
 import com.example.order_service.dtos.OrderDTO;
+import com.example.order_service.exceptions.OrderErrorException;
 import com.example.order_service.exceptions.OrderNotFoundException;
+import com.example.order_service.exceptions.UserNotFoundException;
 import com.example.order_service.models.Order;
 import com.example.order_service.models.OrderStatus;
 
@@ -13,10 +15,10 @@ public interface OrderService {
 
     List<OrderDTO> getAllOrders();
 
-    OrderDTO createOrder(NewOrder newOrder);
+    //OrderDTO createOrder(NewOrder newOrder);
 
     void updateOrderStatus(Long id, OrderStatus status) throws OrderNotFoundException;
 
-    public void createOrder(NewOrderRequest newOrderRequest);
+    public OrderDTO createOrder(NewOrderRequest newOrderRequest) throws OrderErrorException, UserNotFoundException;
 
 }

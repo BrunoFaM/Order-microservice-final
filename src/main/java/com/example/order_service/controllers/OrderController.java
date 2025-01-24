@@ -3,7 +3,9 @@ package com.example.order_service.controllers;
 import com.example.order_service.dtos.NewOrder;
 import com.example.order_service.dtos.NewOrderRequest;
 import com.example.order_service.dtos.OrderDTO;
+import com.example.order_service.exceptions.OrderErrorException;
 import com.example.order_service.exceptions.OrderNotFoundException;
+import com.example.order_service.exceptions.UserNotFoundException;
 import com.example.order_service.models.OrderStatus;
 import com.example.order_service.services.OrderService;
 import jakarta.validation.Valid;
@@ -31,11 +33,11 @@ public class OrderController {
     }
 
     @PostMapping
-    public ResponseEntity<?> postAnOrder(@Valid @RequestBody NewOrderRequest newOrderRequest){
+    public ResponseEntity<?> postAnOrder(@Valid @RequestBody NewOrderRequest newOrderRequest) throws OrderErrorException, UserNotFoundException {
 
-        orderService.createOrder(newOrderRequest);
+        OrderDTO order = orderService.createOrder(newOrderRequest);
 
-        return new ResponseEntity<>(HttpStatus.OK);
+        return new ResponseEntity<>(order, HttpStatus.CREATED);
 
 
 

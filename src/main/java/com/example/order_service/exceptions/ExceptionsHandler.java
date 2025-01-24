@@ -31,4 +31,16 @@ public class ExceptionsHandler {
         return exception.getMessage();
     }
 
+    @ResponseStatus(HttpStatus.NOT_FOUND)
+    @ExceptionHandler(UserNotFoundException.class)
+    public String handleUserNOtFound(UserNotFoundException exception){
+        return exception.getMessage();
+    }
+
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    @ExceptionHandler(OrderErrorException.class)
+    public String handleOrderErrorNOtFound(OrderErrorException exception){
+        return exception.getMessage();
+    }
+
 }
