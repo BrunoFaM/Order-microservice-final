@@ -69,11 +69,9 @@ public class OrderServiceImpl implements OrderService {
         //getting the user_Id
         String email = newOrderRequest.email();
         ResponseEntity<Long> response;
-        ResponseEntity<Boolean> wasSaved;
         try {
             response = restTemplate.getForEntity(urlUserService + "/{email}", Long.class, email);
         } catch (HttpClientErrorException exception) {
-            //return new ResponseEntity<>(exception.getMessage(), exception.getStatusCode());
             throw new UserNotFoundException(exception.getResponseBodyAsString());
         }
 
