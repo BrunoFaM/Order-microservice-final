@@ -1,6 +1,6 @@
 package com.example.order_service.services.ServicesImplementation;
 
-import com.example.order_service.dtos.NewOrder;
+import com.example.order_service.dtos.NewOrderItem;
 import com.example.order_service.dtos.NewOrderRequest;
 import com.example.order_service.dtos.OrderDTO;
 import com.example.order_service.exceptions.OrderErrorException;
@@ -65,25 +65,46 @@ public class OrderServiceImpl implements OrderService {
         return new OrderDTO(savedOrder);
     }
 
+    private List<NewOrderItem> mergeEqualProducts(List<NewOrderItem> products){
+        HashMap<Long , NewOrderItem> uniqueProducts = new HashMap<>();
+        //create a hashMap, where the products with the same id are merged in one product with the stock of each one added
+        for (NewOrderItem productItem : products) {
+            if(!uniqueProducts.containsKey(productItem.productId())) {
+                uniqueProducts.put(productItem.productId(), productItem);
+            }else {
+                NewOrderItem product = uniqueProducts.get(productItem.productId());
+                NewOrderItem newProduct = new NewOrderItem(product.productId(), product.quantity() + productItem.quantity());
+                uniqueProducts.replace(product.productId(), newProduct);
+            }
+        }
+        return uniqueProducts.values().stream().toList();
+    }
+
+
     public OrderDTO createOrder(NewOrderRequest newOrderRequest) throws OrderErrorException, UserNotFoundException{
         //getting the user_Id
         String email = newOrderRequest.email();
         ResponseEntity<Long> response;
+        //i need a new instance because NewOrderRequest is a record
+        NewOrderRequest mergedProductsOrder;
         try {
             response = restTemplate.getForEntity(urlUserService + "/{email}", Long.class, email);
         } catch (HttpClientErrorException exception) {
             throw new UserNotFoundException(exception.getResponseBodyAsString());
         }
 
+
         try{
-            restTemplate.postForEntity(urlProductService + "order", newOrderRequest.products(), Boolean.class);
+            mergedProductsOrder = new NewOrderRequest(newOrderRequest.email(), this.mergeEqualProducts(newOrderRequest.products()));
+            restTemplate.postForEntity(urlProductService + "order", mergedProductsOrder.products(), Boolean.class);
         }catch (HttpStatusCodeException exception){
             throw new OrderErrorException(exception.getResponseBodyAsString());
         }
         Long userId = response.getBody();
 
 
-        return saveOrder(userId,newOrderRequest);
+
+        return saveOrder(userId, mergedProductsOrder);
 
     }
 
