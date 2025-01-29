@@ -3,6 +3,7 @@ package com.example.order_service.services.ServicesImplementation;
 import com.example.order_service.dtos.NewOrderItem;
 import com.example.order_service.dtos.NewOrderRequest;
 import com.example.order_service.dtos.OrderDTO;
+import com.example.order_service.dtos.OrderReduceStockRequest;
 import com.example.order_service.exceptions.OrderErrorException;
 import com.example.order_service.exceptions.OrderNotFoundException;
 import com.example.order_service.exceptions.UserNotFoundException;
@@ -12,6 +13,8 @@ import com.example.order_service.models.OrderStatus;
 import com.example.order_service.repository.OrderItemRepository;
 import com.example.order_service.repository.OrderRepository;
 import com.example.order_service.services.OrderService;
+import jakarta.transaction.Transactional;
+import org.springframework.amqp.core.AmqpTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
@@ -25,6 +28,9 @@ import java.util.stream.Collectors;
 
 @Service
 public class OrderServiceImpl implements OrderService {
+
+    @Autowired
+    private AmqpTemplate amqpTemplate;
 
     @Autowired
     private OrderRepository orderRepository;
@@ -47,7 +53,7 @@ public class OrderServiceImpl implements OrderService {
                 .toList();
         return orderList;
     }
-
+    @Transactional
     private OrderDTO saveOrder(Long userId, NewOrderRequest newOrder) {
         Order order = new Order(userId, OrderStatus.PENDING);
         Set<OrderItem> products = newOrder
@@ -61,6 +67,15 @@ public class OrderServiceImpl implements OrderService {
         Order savedOrder = orderRepository.save(order);
 
         orderItemRepository.saveAll(order.getProducts());
+        //i need to keep track of the id od the order for update later
+
+        OrderReduceStockRequest orderReduceStockRequest = new OrderReduceStockRequest(savedOrder.getId(), newOrder.products());
+
+        System.out.println(orderReduceStockRequest);
+        //call to the asyn method to reduce stock
+        amqpTemplate.convertAndSend("testingExchange", "routing.key", orderReduceStockRequest);
+        //amqpTemplate.convertAndSend("testingExchange", "rout.key", newOrder.products());
+
 
         return new OrderDTO(savedOrder);
     }
@@ -93,15 +108,16 @@ public class OrderServiceImpl implements OrderService {
             throw new UserNotFoundException(exception.getResponseBodyAsString());
         }
 
-
+        //orden validation
         try{
             mergedProductsOrder = new NewOrderRequest(newOrderRequest.email(), this.mergeEqualProducts(newOrderRequest.products()));
-            restTemplate.postForEntity(urlProductService + "order", mergedProductsOrder.products(), Boolean.class);
+
+            restTemplate.postForEntity(urlProductService + "order/validation", mergedProductsOrder.products(), void.class);
         }catch (HttpStatusCodeException exception){
+            System.out.println(exception.getResponseBodyAsString());
             throw new OrderErrorException(exception.getResponseBodyAsString());
         }
         Long userId = response.getBody();
-
 
 
         return saveOrder(userId, mergedProductsOrder);
