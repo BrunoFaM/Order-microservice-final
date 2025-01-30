@@ -1,6 +1,8 @@
 package com.example.order_service.controllers;
 
+import com.example.order_service.config.JwtUtils;
 import com.example.order_service.dtos.NewOrder;
+import com.example.order_service.dtos.NewOrderItem;
 import com.example.order_service.dtos.NewOrderRequest;
 import com.example.order_service.dtos.OrderDTO;
 import com.example.order_service.exceptions.OrderErrorException;
@@ -8,6 +10,7 @@ import com.example.order_service.exceptions.OrderNotFoundException;
 import com.example.order_service.exceptions.UserNotFoundException;
 import com.example.order_service.models.OrderStatus;
 import com.example.order_service.services.OrderService;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -23,23 +26,36 @@ public class OrderController {
     @Autowired
     private OrderService orderService;
 
-    @GetMapping
-    public ResponseEntity<?> getAllOrders(){
+    @Autowired
+    private JwtUtils jwtUtils;
 
-        List<OrderDTO> orderList = orderService.getAllOrders();
+    //testing security
+    @GetMapping("/test")
+    public ResponseEntity<?> testing(HttpServletRequest request){
+
+        return new ResponseEntity<>(jwtUtils.getUserId(request), HttpStatus.OK);
+    }
+
+    @GetMapping
+    public ResponseEntity<?> getAllOrders(HttpServletRequest request){
+
+
+        List<OrderDTO> orderList = orderService.getAllOrderFromUserId(jwtUtils.getUserId(request));
 
 
         return new ResponseEntity<>(orderList, HttpStatus.OK);
     }
 
     @PostMapping
-    public ResponseEntity<?> postAnOrder(@Valid @RequestBody NewOrderRequest newOrderRequest) throws OrderErrorException, UserNotFoundException {
+    public ResponseEntity<?> postAnOrder(HttpServletRequest request, @Valid @RequestBody List<NewOrderItem> newProducts) throws OrderErrorException, UserNotFoundException {
 
-        OrderDTO order = orderService.createOrder(newOrderRequest);
+        Long userId = jwtUtils.getUserId(request);
+
+        OrderDTO order = orderService.createOrder(userId, newProducts);
+
+        //return new ResponseEntity<>(order, HttpStatus.CREATED);
 
         return new ResponseEntity<>(order, HttpStatus.CREATED);
-
-
 
     }
 

@@ -15,7 +15,7 @@ public class RabbitServiceTest {
     private OrderService orderService;
 
     //this event update the state of an orden to completed or cancelled
-    @RabbitListener(queues = "testingQueue2")
+    @RabbitListener(queues = "testingQueue2", concurrency = "1")
     public void listenerQueue2(ReduceStockResponse response) throws OrderNotFoundException {
         System.out.println("LISTENER ORDER SERVICE");
         if(response.isReduced()){

@@ -53,11 +53,22 @@ public class OrderServiceImpl implements OrderService {
                 .toList();
         return orderList;
     }
+
+    @Override
+    public List<OrderDTO> getAllOrderFromUserId(Long userId) {
+        List<OrderDTO> orderList = orderRepository.findAllByUserId(userId)
+                .stream()
+                .map(OrderDTO::new)
+                .toList();
+        return orderList;
+    }
+
+
+
     @Transactional
-    private OrderDTO saveOrder(Long userId, NewOrderRequest newOrder) {
+    private OrderDTO saveOrder(Long userId, List<NewOrderItem> newOrderProducts) {
         Order order = new Order(userId, OrderStatus.PENDING);
-        Set<OrderItem> products = newOrder
-                        .products()
+        Set<OrderItem> products = newOrderProducts
                         .stream()
                         .map(newOrderItem -> new OrderItem(newOrderItem.productId(), newOrderItem.quantity()))
                         .collect(Collectors.toSet());
@@ -69,13 +80,12 @@ public class OrderServiceImpl implements OrderService {
         orderItemRepository.saveAll(order.getProducts());
         //i need to keep track of the id od the order for update later
 
-        OrderReduceStockRequest orderReduceStockRequest = new OrderReduceStockRequest(savedOrder.getId(), newOrder.products());
+        OrderReduceStockRequest orderReduceStockRequest = new OrderReduceStockRequest(savedOrder.getId(), newOrderProducts);
 
         System.out.println(orderReduceStockRequest);
         //call to the asyn method to reduce stock
-        amqpTemplate.convertAndSend("testingExchange", "routing.key", orderReduceStockRequest);
+        amqpTemplate.convertAndSend("reduceStockExchange", "routing.key", orderReduceStockRequest);
         //amqpTemplate.convertAndSend("testingExchange", "rout.key", newOrder.products());
-
 
         return new OrderDTO(savedOrder);
     }
@@ -95,40 +105,57 @@ public class OrderServiceImpl implements OrderService {
         return uniqueProducts.values().stream().toList();
     }
 
+    public OrderDTO createOrder(Long userId, List<NewOrderItem> products) throws OrderErrorException{
 
-    public OrderDTO createOrder(NewOrderRequest newOrderRequest) throws OrderErrorException, UserNotFoundException{
-        //getting the user_Id
-        String email = newOrderRequest.email();
-        ResponseEntity<Long> response;
-        //i need a new instance because NewOrderRequest is a record
-        NewOrderRequest mergedProductsOrder;
-        try {
-            response = restTemplate.getForEntity(urlUserService + "/{email}", Long.class, email);
-        } catch (HttpClientErrorException exception) {
-            throw new UserNotFoundException(exception.getResponseBodyAsString());
-        }
 
         //orden validation
+        List<NewOrderItem> mergedProducts = this.mergeEqualProducts(products);
         try{
-            mergedProductsOrder = new NewOrderRequest(newOrderRequest.email(), this.mergeEqualProducts(newOrderRequest.products()));
 
-            restTemplate.postForEntity(urlProductService + "order/validation", mergedProductsOrder.products(), void.class);
+            restTemplate.postForEntity(urlProductService + "order/validation", mergedProducts, void.class);
         }catch (HttpStatusCodeException exception){
             System.out.println(exception.getResponseBodyAsString());
             throw new OrderErrorException(exception.getResponseBodyAsString());
         }
-        Long userId = response.getBody();
 
-
-        return saveOrder(userId, mergedProductsOrder);
+        return saveOrder(userId, mergedProducts);
 
     }
+
+//    public OrderDTO createOrder(NewOrderRequest newOrderRequest) throws OrderErrorException, UserNotFoundException{
+//        //getting the user_Id
+//        String email = newOrderRequest.email();
+//        ResponseEntity<Long> response;
+//        //i need a new instance because NewOrderRequest is a record
+//        NewOrderRequest mergedProductsOrder;
+//        try {
+//            response = restTemplate.getForEntity(urlUserService + "/{email}", Long.class, email);
+//        } catch (HttpClientErrorException exception) {
+//            throw new UserNotFoundException(exception.getResponseBodyAsString());
+//        }
+//
+//        //orden validation
+//        try{
+//            mergedProductsOrder = new NewOrderRequest(newOrderRequest.email(), this.mergeEqualProducts(newOrderRequest.products()));
+//
+//            restTemplate.postForEntity(urlProductService + "order/validation", mergedProductsOrder.products(), void.class);
+//        }catch (HttpStatusCodeException exception){
+//            System.out.println(exception.getResponseBodyAsString());
+//            throw new OrderErrorException(exception.getResponseBodyAsString());
+//        }
+//        Long userId = response.getBody();
+//
+//
+//        return saveOrder(userId, mergedProductsOrder);
+//
+//    }
 
     public Order getOrderById(Long id) throws OrderNotFoundException {
         return orderRepository.findById(id).orElseThrow(() -> new OrderNotFoundException());
     }
 
     @Override
+    @Transactional
     public void updateOrderStatus(Long id, OrderStatus status) throws OrderNotFoundException {
         Order order = getOrderById(id);
         if(order.getStatus() != status){
