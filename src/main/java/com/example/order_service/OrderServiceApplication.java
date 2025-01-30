@@ -10,10 +10,14 @@ import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
+import org.springframework.scheduling.annotation.EnableScheduling;
 
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 @SpringBootApplication
+@EnableScheduling
 public class OrderServiceApplication {
 
 	@Autowired
@@ -57,6 +61,55 @@ public class OrderServiceApplication {
 //
 //		};
 //	}
+
+	@Bean
+	CommandLineRunner initData(){
+		return args -> {
+
+			Order order = new Order(1L, OrderStatus.PENDING);
+			Order order1 = new Order(2L, OrderStatus.PENDING);
+			Order order2 = new Order(1L, OrderStatus.PENDING);
+
+
+			OrderItem item = new OrderItem(1L, 20);
+			OrderItem item2 = new OrderItem(3L, 10);
+
+			OrderItem item3 = new OrderItem(1L, 20);
+			OrderItem item4 = new OrderItem(3L, 10);
+
+			OrderItem item5 = new OrderItem(1L, 20);
+			OrderItem item6 = new OrderItem(3L, 10);
+
+			Set<OrderItem> items1 = new HashSet<>();
+			Set<OrderItem> items2 = new HashSet<>();
+			Set<OrderItem> items3 = new HashSet<>();
+
+			items1.add(item);
+			items1.add(item2);
+
+			items2.add(item3);
+			items2.add(item4);
+
+			items3.add(item5);
+			items3.add(item6);
+
+
+			order.setProducts(items1);
+			order1.setProducts(items2);
+			order2.setProducts(items3);
+
+			orderRepository.save(order);
+			orderRepository.save(order1);
+			orderRepository.save(order2);
+
+			orderItemRepository.saveAll(items1);
+			orderItemRepository.saveAll(items2);
+			orderItemRepository.saveAll(items3);
+
+
+
+		};
+	}
 
 
 }

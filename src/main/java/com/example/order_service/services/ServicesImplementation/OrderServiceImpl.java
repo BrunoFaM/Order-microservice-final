@@ -122,6 +122,22 @@ public class OrderServiceImpl implements OrderService {
 
     }
 
+    @Override
+    @Transactional
+    public List<OrderReduceStockRequest> getAllPendingOrders() {
+        List<Order> orderList = orderRepository.findAllByStatus(OrderStatus.PENDING);
+        List<OrderReduceStockRequest> pendingOrders = new ArrayList<>();
+
+        for(Order order : orderList){
+            List<NewOrderItem> items = order.getProducts()
+                    .stream()
+                    .map(item -> new NewOrderItem(item.getProductId(), item.getQuantity()))
+                    .toList();
+            pendingOrders.add(new OrderReduceStockRequest(order.getId(), items));
+        }
+        return pendingOrders;
+    }
+
 //    public OrderDTO createOrder(NewOrderRequest newOrderRequest) throws OrderErrorException, UserNotFoundException{
 //        //getting the user_Id
 //        String email = newOrderRequest.email();

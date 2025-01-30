@@ -20,10 +20,7 @@ public class RabbitServiceTest {
         System.out.println("LISTENER ORDER SERVICE");
         if(response.isReduced()){
             orderService.updateOrderStatus(response.orderId(), OrderStatus.COMPLETED);
-        }else{
-            orderService.updateOrderStatus(response.orderId(), OrderStatus.FAILED);
         }
-        ;
         System.out.println("****************");
     }
 

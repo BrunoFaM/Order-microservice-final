@@ -1,9 +1,6 @@
 package com.example.order_service.services;
 
-import com.example.order_service.dtos.NewOrder;
-import com.example.order_service.dtos.NewOrderItem;
-import com.example.order_service.dtos.NewOrderRequest;
-import com.example.order_service.dtos.OrderDTO;
+import com.example.order_service.dtos.*;
 import com.example.order_service.exceptions.OrderErrorException;
 import com.example.order_service.exceptions.OrderNotFoundException;
 import com.example.order_service.exceptions.UserNotFoundException;
@@ -25,4 +22,6 @@ public interface OrderService {
     //public OrderDTO createOrder(NewOrderRequest newOrderRequest) throws OrderErrorException, UserNotFoundException;
 
     public OrderDTO createOrder(Long userId, List<NewOrderItem> itemsList) throws OrderErrorException;
+
+    public List<OrderReduceStockRequest> getAllPendingOrders();
 }
