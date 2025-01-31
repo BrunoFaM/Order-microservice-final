@@ -47,7 +47,9 @@ public class OrderController {
 
         String email = jwtUtils.getEmail(request);
 
-        OrderDTO order = orderService.createOrder(userId, email, newProducts);
+        //OrderDTO order = orderService.createOrder(userId, email, newProducts);
+
+        OrderDTO order = orderService.createOrder(request, newProducts);
 
         //return new ResponseEntity<>(order, HttpStatus.CREATED);
 

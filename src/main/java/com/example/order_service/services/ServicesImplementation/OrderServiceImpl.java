@@ -1,5 +1,6 @@
 package com.example.order_service.services.ServicesImplementation;
 
+import com.example.order_service.config.JwtUtils;
 import com.example.order_service.dtos.*;
 import com.example.order_service.exceptions.OrderErrorException;
 import com.example.order_service.exceptions.OrderNotFoundException;
@@ -10,6 +11,8 @@ import com.example.order_service.models.OrderStatus;
 import com.example.order_service.repository.OrderItemRepository;
 import com.example.order_service.repository.OrderRepository;
 import com.example.order_service.services.OrderService;
+import com.example.order_service.services.ProductRequestsService;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.transaction.Transactional;
 import org.springframework.amqp.core.AmqpTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -36,11 +39,12 @@ public class OrderServiceImpl implements OrderService {
     private OrderItemRepository orderItemRepository;
 
     @Autowired
-    private RestTemplate restTemplate;
-    @Value("${userservice.path}")
-    private String urlUserService;
-    @Value("${productservice.path}")
-    private String urlProductService;
+    private JwtUtils jwtUtils;
+
+    @Autowired
+    private ProductRequestsService productRequestsService;
+
+
 
     @Override
     public List<OrderDTO> getAllOrders() {
@@ -108,17 +112,20 @@ public class OrderServiceImpl implements OrderService {
         return uniqueProducts.values().stream().toList();
     }
 
-    public OrderDTO createOrder(Long userId, String email ,List<NewOrderItem> products) throws OrderErrorException{
+    public OrderDTO createOrder(HttpServletRequest request, List<NewOrderItem> products) throws OrderErrorException{
+
 
 
         //orden validation
         List<NewOrderItem> mergedProducts = this.mergeEqualProducts(products);
-        try{
-            restTemplate.postForEntity(urlProductService + "order/validation", mergedProducts, void.class);
-        }catch (HttpStatusCodeException exception){
-            System.out.println(exception.getResponseBodyAsString());
-            throw new OrderErrorException(exception.getResponseBodyAsString());
-        }
+
+        //call restTemplate to validate products
+        productRequestsService.validateProductsStockAndExistence(mergedProducts);
+
+        String email = jwtUtils.getEmail(request);
+
+        Long userId = jwtUtils.getUserId(request);
+
         return saveOrder(userId, email,mergedProducts);
 
     }

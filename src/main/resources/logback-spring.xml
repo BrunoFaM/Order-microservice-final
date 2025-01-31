@@ -28,10 +28,13 @@
     <!-- Configuración de niveles -->
     <root level="INFO">
         <appender-ref ref="CONSOLE" />
+        <appender-ref ref="FILE" />
     </root>
 
-    <logger name="com.mindhub.rejunte" level="WARN">
-        <appender-ref ref="FILE"/>
+    <logger name="com.example.order_service" level="WARN" additivity="false">
+        <appender-ref ref="FILE" />
     </logger>
-
+    <logger name="org.springframework.amqp" level="WARN" additivity="false">
+        <appender-ref ref="FILE" />
+    </logger>
 </configuration>
