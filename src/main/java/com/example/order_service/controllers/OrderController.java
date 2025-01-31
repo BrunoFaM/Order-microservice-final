@@ -29,12 +29,6 @@ public class OrderController {
     @Autowired
     private JwtUtils jwtUtils;
 
-    //testing security
-    @GetMapping("/test")
-    public ResponseEntity<?> testing(HttpServletRequest request){
-
-        return new ResponseEntity<>(jwtUtils.getUserId(request), HttpStatus.OK);
-    }
 
     @GetMapping
     public ResponseEntity<?> getAllOrders(HttpServletRequest request){
@@ -51,7 +45,9 @@ public class OrderController {
 
         Long userId = jwtUtils.getUserId(request);
 
-        OrderDTO order = orderService.createOrder(userId, newProducts);
+        String email = jwtUtils.getEmail(request);
+
+        OrderDTO order = orderService.createOrder(userId, email, newProducts);
 
         //return new ResponseEntity<>(order, HttpStatus.CREATED);
 
@@ -60,12 +56,6 @@ public class OrderController {
     }
 
 
-    @PutMapping ("/{id}")
-    public ResponseEntity<?> updateOrderStatus(@PathVariable Long id, @RequestBody OrderStatus status) throws OrderNotFoundException {
-        orderService.updateOrderStatus(id, status);
 
-
-        return new ResponseEntity<>(HttpStatus.OK);
-    }
 
 }

@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
+import java.util.Date;
 import java.util.List;
 
 @Service
@@ -17,12 +18,13 @@ public class ScheduledService {
     @Autowired
     private AmqpTemplate amqpTemplate;
 
-    @Scheduled(cron = "*/10 * * * * *")
+    @Scheduled(cron = "*/30 * * * * *")
     public void sendPendingOrdersToBroker(){
         System.out.println("IN THE SCHEDULER");
+        System.out.println(new Date());
         List<OrderReduceStockRequest> pendingOrders = orderService.getAllPendingOrders();
         for(OrderReduceStockRequest request : pendingOrders){
-            amqpTemplate.convertAndSend("reduceStockExchange", "routing.key", request);
+            amqpTemplate.convertAndSend("reduceStockScheduledExchange", "routing.key3", request);
         }
     }
 }

@@ -24,6 +24,4 @@ public class RabbitServiceTest {
         System.out.println("****************");
     }
 
-
-
 }

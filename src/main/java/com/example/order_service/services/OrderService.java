@@ -21,7 +21,7 @@ public interface OrderService {
 
     //public OrderDTO createOrder(NewOrderRequest newOrderRequest) throws OrderErrorException, UserNotFoundException;
 
-    public OrderDTO createOrder(Long userId, List<NewOrderItem> itemsList) throws OrderErrorException;
+    public OrderDTO createOrder(Long userId,String email ,List<NewOrderItem> itemsList) throws OrderErrorException;
 
     public List<OrderReduceStockRequest> getAllPendingOrders();
 }

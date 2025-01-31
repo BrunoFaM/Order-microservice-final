@@ -24,6 +24,16 @@ public class RabbitMQConfig {
         return new Queue("testingQueue1", false);
     }
 
+    @Bean
+    public Queue queue3() {
+        return new Queue("reduceStockScheduled", false);
+    }
+
+    @Bean
+    public Queue sendOrderDetailQueue(){
+        return new Queue("orderDetailsQueue");
+    }
+
 
 
     @Bean
@@ -31,9 +41,24 @@ public class RabbitMQConfig {
         return new TopicExchange("reduceStockExchange");
     }
 
+    @Bean
+    public TopicExchange exchange3() {
+        return new TopicExchange("reduceStockScheduledExchange");
+    }
 
     @Bean
-    public Binding bindingQueue(Queue queue, TopicExchange exchange) {
+    public Binding bindQueue(Queue sendOrderDetailQueue, TopicExchange exchange){
+        return BindingBuilder.bind(sendOrderDetailQueue).to(exchange).with("routing.key4");
+    }
+
+
+    @Bean
+    public Binding bindingQueue(Queue queue3, TopicExchange exchange3) {
+        return BindingBuilder.bind(queue3).to(exchange3).with("routing.key3");
+    }
+
+    @Bean
+    public Binding bindingQueue3(Queue queue, TopicExchange exchange) {
         return BindingBuilder.bind(queue).to(exchange).with("routing.key");
     }
 

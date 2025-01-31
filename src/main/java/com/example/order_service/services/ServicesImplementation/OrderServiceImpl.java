@@ -1,9 +1,6 @@
 package com.example.order_service.services.ServicesImplementation;
 
-import com.example.order_service.dtos.NewOrderItem;
-import com.example.order_service.dtos.NewOrderRequest;
-import com.example.order_service.dtos.OrderDTO;
-import com.example.order_service.dtos.OrderReduceStockRequest;
+import com.example.order_service.dtos.*;
 import com.example.order_service.exceptions.OrderErrorException;
 import com.example.order_service.exceptions.OrderNotFoundException;
 import com.example.order_service.exceptions.UserNotFoundException;
@@ -66,7 +63,7 @@ public class OrderServiceImpl implements OrderService {
 
 
     @Transactional
-    private OrderDTO saveOrder(Long userId, List<NewOrderItem> newOrderProducts) {
+    private OrderDTO saveOrder(Long userId, String email ,List<NewOrderItem> newOrderProducts) {
         Order order = new Order(userId, OrderStatus.PENDING);
         Set<OrderItem> products = newOrderProducts
                         .stream()
@@ -83,6 +80,12 @@ public class OrderServiceImpl implements OrderService {
         OrderReduceStockRequest orderReduceStockRequest = new OrderReduceStockRequest(savedOrder.getId(), newOrderProducts);
 
         System.out.println(orderReduceStockRequest);
+        //I send the email with the order details
+        OrderSendDetailsDTO detailsDTO = new OrderSendDetailsDTO(email, newOrderProducts);
+
+        amqpTemplate.convertAndSend("reduceStockExchange", "routing.key4", detailsDTO);
+
+
         //call to the asyn method to reduce stock
         amqpTemplate.convertAndSend("reduceStockExchange", "routing.key", orderReduceStockRequest);
         //amqpTemplate.convertAndSend("testingExchange", "rout.key", newOrder.products());
@@ -105,20 +108,18 @@ public class OrderServiceImpl implements OrderService {
         return uniqueProducts.values().stream().toList();
     }
 
-    public OrderDTO createOrder(Long userId, List<NewOrderItem> products) throws OrderErrorException{
+    public OrderDTO createOrder(Long userId, String email ,List<NewOrderItem> products) throws OrderErrorException{
 
 
         //orden validation
         List<NewOrderItem> mergedProducts = this.mergeEqualProducts(products);
         try{
-
             restTemplate.postForEntity(urlProductService + "order/validation", mergedProducts, void.class);
         }catch (HttpStatusCodeException exception){
             System.out.println(exception.getResponseBodyAsString());
             throw new OrderErrorException(exception.getResponseBodyAsString());
         }
-
-        return saveOrder(userId, mergedProducts);
+        return saveOrder(userId, email,mergedProducts);
 
     }
 
@@ -138,33 +139,6 @@ public class OrderServiceImpl implements OrderService {
         return pendingOrders;
     }
 
-//    public OrderDTO createOrder(NewOrderRequest newOrderRequest) throws OrderErrorException, UserNotFoundException{
-//        //getting the user_Id
-//        String email = newOrderRequest.email();
-//        ResponseEntity<Long> response;
-//        //i need a new instance because NewOrderRequest is a record
-//        NewOrderRequest mergedProductsOrder;
-//        try {
-//            response = restTemplate.getForEntity(urlUserService + "/{email}", Long.class, email);
-//        } catch (HttpClientErrorException exception) {
-//            throw new UserNotFoundException(exception.getResponseBodyAsString());
-//        }
-//
-//        //orden validation
-//        try{
-//            mergedProductsOrder = new NewOrderRequest(newOrderRequest.email(), this.mergeEqualProducts(newOrderRequest.products()));
-//
-//            restTemplate.postForEntity(urlProductService + "order/validation", mergedProductsOrder.products(), void.class);
-//        }catch (HttpStatusCodeException exception){
-//            System.out.println(exception.getResponseBodyAsString());
-//            throw new OrderErrorException(exception.getResponseBodyAsString());
-//        }
-//        Long userId = response.getBody();
-//
-//
-//        return saveOrder(userId, mergedProductsOrder);
-//
-//    }
 
     public Order getOrderById(Long id) throws OrderNotFoundException {
         return orderRepository.findById(id).orElseThrow(() -> new OrderNotFoundException());
