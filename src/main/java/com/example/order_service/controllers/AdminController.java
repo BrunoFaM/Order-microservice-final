@@ -30,7 +30,7 @@ public class AdminController {
 
     @PutMapping("/{id}")
     public ResponseEntity<?> updateOrderStatus(@PathVariable Long id, @RequestBody OrderStatus status) throws OrderNotFoundException {
-        orderService.updateOrderStatus(id, status);
+       // orderService.updateOrderStatus(id, status);
 
 
         return new ResponseEntity<>(HttpStatus.OK);

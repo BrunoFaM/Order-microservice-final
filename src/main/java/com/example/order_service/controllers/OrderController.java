@@ -33,25 +33,14 @@ public class OrderController {
     @GetMapping
     public ResponseEntity<?> getAllOrders(HttpServletRequest request){
 
-
         List<OrderDTO> orderList = orderService.getAllOrderFromUserId(jwtUtils.getUserId(request));
-
-
         return new ResponseEntity<>(orderList, HttpStatus.OK);
     }
 
     @PostMapping
     public ResponseEntity<?> postAnOrder(HttpServletRequest request, @Valid @RequestBody List<NewOrderItem> newProducts) throws OrderErrorException, UserNotFoundException {
 
-        Long userId = jwtUtils.getUserId(request);
-
-        String email = jwtUtils.getEmail(request);
-
-        //OrderDTO order = orderService.createOrder(userId, email, newProducts);
-
         OrderDTO order = orderService.createOrder(request, newProducts);
-
-        //return new ResponseEntity<>(order, HttpStatus.CREATED);
 
         return new ResponseEntity<>(order, HttpStatus.CREATED);
 

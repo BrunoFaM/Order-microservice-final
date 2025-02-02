@@ -18,7 +18,7 @@ public interface OrderService {
 
     //OrderDTO createOrder(NewOrder newOrder);
 
-    void updateOrderStatus(Long id, OrderStatus status) throws OrderNotFoundException;
+    void updateOrderStatus(Long id) throws OrderNotFoundException;
 
     //public OrderDTO createOrder(NewOrderRequest newOrderRequest) throws OrderErrorException, UserNotFoundException;
 

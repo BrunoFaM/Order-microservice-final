@@ -10,6 +10,7 @@ import com.example.order_service.models.OrderItem;
 import com.example.order_service.models.OrderStatus;
 import com.example.order_service.repository.OrderItemRepository;
 import com.example.order_service.repository.OrderRepository;
+import com.example.order_service.services.MessageSenderService;
 import com.example.order_service.services.OrderService;
 import com.example.order_service.services.ProductRequestsService;
 import jakarta.servlet.http.HttpServletRequest;
@@ -31,6 +32,9 @@ public class OrderServiceImpl implements OrderService {
 
     @Autowired
     private AmqpTemplate amqpTemplate;
+
+    @Autowired
+    private MessageSenderService messageSenderService;
 
     @Autowired
     private OrderRepository orderRepository;
@@ -79,20 +83,16 @@ public class OrderServiceImpl implements OrderService {
         Order savedOrder = orderRepository.save(order);
 
         orderItemRepository.saveAll(order.getProducts());
-        //i need to keep track of the id od the order for update later
 
         OrderReduceStockRequest orderReduceStockRequest = new OrderReduceStockRequest(savedOrder.getId(), newOrderProducts);
 
         System.out.println(orderReduceStockRequest);
-        //I send the email with the order details
+
         OrderSendDetailsDTO detailsDTO = new OrderSendDetailsDTO(email, newOrderProducts);
 
-        amqpTemplate.convertAndSend("reduceStockExchange", "routing.key4", detailsDTO);
+        messageSenderService.sendReduceStockMessage(orderReduceStockRequest);
 
-
-        //call to the asyn method to reduce stock
-        amqpTemplate.convertAndSend("reduceStockExchange", "routing.key", orderReduceStockRequest);
-        //amqpTemplate.convertAndSend("testingExchange", "rout.key", newOrder.products());
+        messageSenderService.sendOrderDetailsMessage(detailsDTO);
 
         return new OrderDTO(savedOrder);
     }
@@ -114,12 +114,8 @@ public class OrderServiceImpl implements OrderService {
 
     public OrderDTO createOrder(HttpServletRequest request, List<NewOrderItem> products) throws OrderErrorException{
 
-
-
-        //orden validation
         List<NewOrderItem> mergedProducts = this.mergeEqualProducts(products);
 
-        //call restTemplate to validate products
         productRequestsService.validateProductsStockAndExistence(mergedProducts);
 
         String email = jwtUtils.getEmail(request);
@@ -137,10 +133,12 @@ public class OrderServiceImpl implements OrderService {
         List<OrderReduceStockRequest> pendingOrders = new ArrayList<>();
 
         for(Order order : orderList){
+            System.out.println(order.getId());
             List<NewOrderItem> items = order.getProducts()
                     .stream()
                     .map(item -> new NewOrderItem(item.getProductId(), item.getQuantity()))
                     .toList();
+            System.out.println(items);
             pendingOrders.add(new OrderReduceStockRequest(order.getId(), items));
         }
         return pendingOrders;
@@ -153,12 +151,10 @@ public class OrderServiceImpl implements OrderService {
 
     @Override
     @Transactional
-    public void updateOrderStatus(Long id, OrderStatus status) throws OrderNotFoundException {
+    public void updateOrderStatus(Long id) throws OrderNotFoundException {
         Order order = getOrderById(id);
-        if(order.getStatus() != status){
-            order.setStatus(status);
-            orderRepository.save(order);
+        order.setStatus(OrderStatus.COMPLETED);
+        orderRepository.save(order);
         }
 
-    }
 }
